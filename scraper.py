@@ -7,6 +7,7 @@ import urllib.request
 import urllib.parse
 import json
 from zoneinfo import ZoneInfo
+from holiday_checker import is_school_holiday
 
 def send_mail(plain_content, html_content, datum_fuer_betreff):
     msg = EmailMessage()
@@ -146,6 +147,12 @@ def get_train_connections():
         return f"Fehler Bahn: {e}\n\n", f"<div class='item text-bad'>Kritischer API-Fehler: {str(e)}</div>"
         
 def run():
+    heute = datetime.date.today()
+    is_holiday, holiday_name = is_school_holiday(heute)
+    if is_holiday:
+        print(f"🏖️ Heute ({heute:%d.%m.%Y}) sind Schulferien in Niedersachsen ({holiday_name}). Keinen E-Mail-Versand.")
+        return
+
     print("Starte den Scraper...")
     try:
         s = webuntis.Session(
