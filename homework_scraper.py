@@ -4,6 +4,7 @@ import datetime
 import re
 from email.message import EmailMessage
 from playwright.sync_api import sync_playwright
+from holiday_checker import is_school_holiday
 
 FACH_NAMEN = {
     "MA": "Mathe", "EK": "Erdkunde", "SP": "Sport", "DE": "Deutsch",
@@ -294,6 +295,36 @@ def extract_homework_text(raw_text):
     return html
 
 def run():
+    heute_calc = datetime.date.today()
+    is_holiday, holiday_name = is_school_holiday(heute_calc)
+    if is_holiday:
+        print(f"🏖️ Heute ({heute_calc:%d.%m.%Y}) sind Schulferien in Niedersachsen ({holiday_name}). Keinen E-Mail-Versand.")
+        webpage_html = f"""<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hausaufgaben Übersicht</title>
+    <style>
+        body {{ background-color: #121212; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }}
+        .card {{ background-color: #1e1e1e; border: 1px solid #333333; padding: 40px; border-radius: 8px; text-align: center; border-left: 4px solid #ffeb3b; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }}
+        h1 {{ color: #ffeb3b; margin-top: 0; font-size: 24px; }}
+        p {{ color: #cccccc; font-size: 16px; line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🏖️ Schulferien ({holiday_name})</h1>
+        <p>Heute ({heute_calc:%d.%m.%Y}) sind Schulferien in Niedersachsen.</p>
+        <p>Genieße die freie Zeit! 🎉</p>
+    </div>
+</body>
+</html>"""
+        os.makedirs("public", exist_ok=True)
+        with open("public/index.html", "w", encoding="utf-8") as f:
+            f.write(webpage_html)
+        return
+
     print("Starte den Geister-Browser auf GitHub Actions...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True) 
